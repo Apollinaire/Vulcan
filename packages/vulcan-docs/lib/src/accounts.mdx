@@ -1,0 +1,59 @@
+---
+title: Accounts
+---
+
+The `vulcan:accounts` package provides a component and Meteor methods to handle accounts-related operations. It is based on `std:accounts-ui`.
+
+## Quickstart
+
+The component registered by this package is called `AccountsLoginForm`. To use it, call `<Components.AccountsLoginForm />` in any React component. You will need to add the `accounts-password` meteor package, and you will have authentication with username, email and password enabled.
+
+## Signup/Login methods
+
+To enable signup with email/password, you must add the meteor package `accounts-password`: 
+You can also add signup/login via Google, Twitter, Facebook or github. 
+
+```sh
+# pick one or more of the below
+meteor add accounts-password
+meteor add accounts-facebook
+meteor add accounts-google
+meteor add accounts-github
+meteor add accounts-twitter
+```
+
+To setup the third-party authentication, you will need to add the API configuration to your `settings.json` file. Be careful to **not** put this in your public settings. Once you have added the packages and the settings related to it, you should see the login button add automatically to the `AccountsLoginForm` component.
+
+Here is an example of settings for every supported provider:
+
+```json
+{
+  "oAuth": {
+    "twitter": {
+      "consumerKey": "foo",
+      "secret": "bar"
+    },
+    "facebook": {
+      "appId": "foo",
+      "secret": "bar"
+    },
+    "google": {
+      "clientId": "foo",
+      "secret": "bar"
+    },
+    "github": {
+      "clientId": "foo",
+      "secret": "bar"
+    },
+  }
+}
+```
+
+## Customize the component
+
+By default, `AccountsLoginForm` will show a login form, along with a button to switch to signup and a button to switch to a 'forgotten password' form. To change this, we expose the following API:
+
+Name | Type | Default | Description
+----- | ---- | -------- | -----------
+showSignInLink | `boolean` | `true` | show a link to switch to signin
+showSignUpLink | `boolean` | `true` | show a link to switch to signup
