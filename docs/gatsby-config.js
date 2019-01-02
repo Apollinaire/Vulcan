@@ -16,7 +16,7 @@ module.exports = {
     {
       resolve: `gatsby-source-filesystem`,
       options: {
-        name: `pages`,
+        name: `docs`,
         path: `${__dirname}/../packages/vulcan-docs/lib/src`,
       },
     },
