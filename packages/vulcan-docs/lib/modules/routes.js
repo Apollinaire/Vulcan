@@ -1,4 +1,4 @@
-import {addRoute, dynamicLoader} from 'meteor/vulcan:core';
+import { addRoute, dynamicLoader } from 'meteor/vulcan:core';
 
 addRoute({
   name: 'docs-accounts',
