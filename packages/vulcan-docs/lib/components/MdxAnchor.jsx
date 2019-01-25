@@ -8,7 +8,7 @@ import { Link } from 'react-router';
  */
 
 function MdxAnchor({ href, children, ...props }) {
-  if (href.slice(0, 3) !== 'http') {
+  if (href.slice(0, 4) !== 'http') {
     return (
       <Link to={'/docs/' + href.replace('.html', '').replace('/','')} {...props}>
         {children}
