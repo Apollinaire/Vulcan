@@ -2,7 +2,7 @@ import { compose } from 'react-apollo'; // note: at the moment, compose@react-ap
 import React from 'react';
 
 export const Components = {}; // will be populated on startup (see vulcan:routing)
-export const ComponentsTable = {} // storage for infos about components
+export const ComponentsTable = {}; // storage for infos about components
 
 /**
  * Register a Vulcan component with a name, a raw component than can be extended
@@ -33,14 +33,14 @@ export function registerComponent(name, rawComponent, ...hocs) {
     // as arguments so destructuring cannot work
     // eslint-disable-next-line no-redeclare
     var { name, component, hocs = [] } = arguments[0];
-    rawComponent = component
+    rawComponent = component;
   }
   // store the component in the table
   ComponentsTable[name] = {
     name,
     rawComponent,
     hocs,
-  }
+  };
 }
 
 /**
@@ -49,15 +49,23 @@ export function registerComponent(name, rawComponent, ...hocs) {
  * @param {String} name The name of the component to get.
  * @returns {Function|React Component} A (wrapped) React component
  */
-export const getComponent = (name) => {
+export const getComponent = name => {
   const component = ComponentsTable[name];
   if (!component) {
-    throw new Error(`Component ${name} not registered.`)
+    throw new Error(`Component ${name} not registered.`);
   }
   if (component.hocs) {
     const hocs = component.hocs.map(hoc => {
-      if(!Array.isArray(hoc)) return hoc;
+      if (!Array.isArray(hoc)) {
+        if (typeof hoc !== 'function') {
+          throw new Error(`In registered component ${name}, an hoc is of type ${typeof hoc}`);
+        }
+        return hoc;
+      }
       const [actualHoc, ...args] = hoc;
+      if (typeof actualHoc !== 'function') {
+        throw new Error(`In registered component ${name}, an hoc is of type ${typeof actualHoc}`);
+      }
       return actualHoc(...args);
     });
     return compose(...hocs)(component.rawComponent);
@@ -80,7 +88,7 @@ export const populateComponentsApp = () => {
     // uncomment for debug
     // console.log('init component:', name);
   });
-}
+};
 
 /**
  * Get the **raw** (original) component registered with registerComponent
@@ -136,7 +144,7 @@ export const populateComponentsApp = () => {
 
 export const copyHoCs = (sourceComponent, targetComponent) => {
   return compose(...sourceComponent.hocs)(targetComponent);
-}
+};
 
 /**
  * Returns an instance of the given component name of function
@@ -149,10 +157,10 @@ export const instantiateComponent = (component, props) => {
     return null;
   } else if (typeof component === 'string') {
     const Component = getComponent(component);
-    return <Component {...props}/>
+    return <Component {...props}/>;
   } else if (typeof component === 'function' && component.prototype && component.prototype.isReactComponent) {
     const Component = component;
-    return <Component {...props}/>
+    return <Component {...props}/>;
   } else if (typeof component === 'function') {
     return component(props);
   } else {
@@ -202,4 +210,3 @@ export const delayedComponent = name => {
 //  return proxy;
 //};
 export const mergeWithComponents = myComponents => (myComponents ? { ...Components, ...myComponents } : Components);
-

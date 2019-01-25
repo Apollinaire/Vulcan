@@ -36,7 +36,6 @@ import React, { Component } from 'react';
 import SimpleSchema from 'simpl-schema';
 import PropTypes from 'prop-types';
 import { intlShape } from 'meteor/vulcan:i18n';
-import Formsy from 'formsy-react';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
@@ -70,7 +69,7 @@ const RESET_PROPS = [
   'collection', 'collectionName', 'typeName', 'document', 'schema', 'currentUser', 
   'fields', 'removeFields',
   'prefilledProps' // TODO: prefilledProps should be merged instead?
-]
+];
 
 const compactParent = (object, path) => {
   const parentPath = getParentPath(path);
@@ -114,7 +113,7 @@ const getInitialStateFromProps = nextProps => {
       while(initialDocument[key].length < minCount)
         initialDocument[key].push({});
     }
-  })
+  });
   
   // remove all instances of the `__typename` property from document
   Utils.removeProperty(initialDocument, '__typename');
@@ -319,13 +318,15 @@ class SmartForm extends Component {
   Note: when submitting the form (getData()), do not include any extra fields.
 
   */
-  getFieldNames = (args = {}) => {
+  getFieldNames = (args) => {
+    // we do this to avoid having default values in arrow functions, which breaks MS Edge support. See https://github.com/meteor/meteor/issues/10171
+    let args0 = args || {};
     const {
       schema = this.state.schema,
       excludeHiddenFields = true,
       replaceIntlFields = false,
       addExtraFields = true
-    } = args;
+    } = args0;
 
     const { fields, addFields } = this.props;
 
@@ -661,7 +662,7 @@ class SmartForm extends Component {
    
   */
   UNSAFE_componentWillReceiveProps(nextProps) {
-    const needReset = !!RESET_PROPS.find(prop => !isEqual(this.props[prop], nextProps[prop]))
+    const needReset = !!RESET_PROPS.find(prop => !isEqual(this.props[prop], nextProps[prop]));
     if (needReset) {
       this.setState(getInitialStateFromProps(nextProps));
     }
@@ -920,9 +921,10 @@ class SmartForm extends Component {
   Submit form handler
   
   */
-  submitForm = data => {
-    // note: we can discard the data collected by Formsy because all the data we need is already available via getDocument()
+  submitForm = event => {
 
+    event.preventDefault();
+    
     // if form is disabled (there is already a submit handler running) don't do anything
     if (this.state.disabled) {
       return;
@@ -931,9 +933,9 @@ class SmartForm extends Component {
     // clear errors and disable form while it's submitting
     this.setState(prevState => ({ errors: [], disabled: true }));
 
-    // complete the data with values from custom components which are not being catched by Formsy mixin
+    // complete the data with values from custom components
     // note: it follows the same logic as SmartForm's getDocument method
-    data = this.getData({ replaceIntlFields: true, addExtraFields: false });
+    let data = this.getData({ replaceIntlFields: true, addExtraFields: false });
 
     // if there's a submit callback, run it
     if (this.props.submitCallback) {
@@ -988,66 +990,82 @@ class SmartForm extends Component {
     }
   };
 
+  
+  // --------------------------------------------------------------------- //
+  // ------------------------- Props to Pass ----------------------------- //
+  // --------------------------------------------------------------------- //  
+
+  getWrapperProps = () => ({
+    className: 'document-' + this.getFormType(),
+  });
+
+  getFormProps = () => ({
+    id: this.props.id,
+    onSubmit: this.submitForm,
+    onKeyDown: this.formKeyDown,
+    ref: e => {
+      this.form = e;
+    },
+  });
+
+  getFormErrorsProps = () => ({
+    errors: this.state.errors
+  });
+
+  getFormGroupProps = group => ({
+    key: group.name,
+    ...group,
+    errors: this.state.errors,
+    throwError: this.throwError,
+    currentValues: this.state.currentValues,
+    updateCurrentValues: this.updateCurrentValues,
+    deletedValues: this.state.deletedValues,
+    addToDeletedValues: this.addToDeletedValues,
+    clearFieldErrors: this.clearFieldErrors,
+    formType: this.getFormType(),
+    currentUser: this.props.currentUser,
+    disabled: this.state.disabled,
+    formComponents: mergeWithComponents(this.props.formComponents),
+  });
+
+  getFormSubmitProps = () => ({
+    submitLabel: this.props.submitLabel,
+    cancelLabel: this.props.cancelLabel,
+    revertLabel: this.props.revertLabel,
+    cancelCallback: this.props.cancelCallback,
+    revertCallback: this.props.revertCallback,
+    document: this.getDocument(),
+    deleteDocument: 
+      (this.getFormType() === 'edit' &&
+        this.props.showRemove &&
+        this.deleteDocument) ||
+      null,
+    collectionName:this.props.collectionName,
+    currentValues:this.state.currentValues,
+    deletedValues:this.state.deletedValues,
+    errors:this.state.errors,
+  });
+
   // --------------------------------------------------------------------- //
   // ----------------------------- Render -------------------------------- //
   // --------------------------------------------------------------------- //
 
   render() {
-    const fieldGroups = this.getFieldGroups();
-    const collectionName = this.props.collectionName;
     const FormComponents = mergeWithComponents(this.props.formComponents);
 
     return (
-      <div className={'document-' + this.getFormType()}>
-        <Formsy.Form
-          id={this.props.id}
-          onSubmit={this.submitForm}
-          onKeyDown={this.formKeyDown}
-          ref={e => {
-            this.form = e;
-          }}
-        >
-          <FormComponents.FormErrors errors={this.state.errors} />
+      <div {...this.getWrapperProps()}>
+        <form {...this.getFormProps()}>
+          <FormComponents.FormErrors {...this.getFormErrorsProps()} />
 
-          {fieldGroups.map(group => (
-            <FormComponents.FormGroup
-              key={group.name}
-              {...group}
-              errors={this.state.errors}
-              throwError={this.throwError}
-              currentValues={this.state.currentValues}
-              updateCurrentValues={this.updateCurrentValues}
-              deletedValues={this.state.deletedValues}
-              addToDeletedValues={this.addToDeletedValues}
-              clearFieldErrors={this.clearFieldErrors}
-              formType={this.getFormType()}
-              currentUser={this.props.currentUser}
-              disabled={this.state.disabled}
-              formComponents={FormComponents}
-            />
+          {this.getFieldGroups().map(group => (
+            <FormComponents.FormGroup {...this.getFormGroupProps(group)} />
           ))}
 
           {this.props.repeatErrors && this.renderErrors()}
 
-          <FormComponents.FormSubmit
-            submitLabel={this.props.submitLabel}
-            cancelLabel={this.props.cancelLabel}
-            revertLabel={this.props.revertLabel}
-            cancelCallback={this.props.cancelCallback}
-            revertCallback={this.props.revertCallback}
-            document={this.getDocument()}
-            deleteDocument={
-              (this.getFormType() === 'edit' &&
-                this.props.showRemove &&
-                this.deleteDocument) ||
-              null
-            }
-            collectionName={collectionName}
-            currentValues={this.state.currentValues}
-            deletedValues={this.state.deletedValues}
-            errors={this.state.errors}
-          />
-        </Formsy.Form>
+          <FormComponents.FormSubmit {...this.getFormSubmitProps()} />
+        </form>
       </div>
     );
   }
@@ -1071,6 +1089,7 @@ SmartForm.propTypes = {
   prefilledProps: PropTypes.object,
   layout: PropTypes.string,
   fields: PropTypes.arrayOf(PropTypes.string),
+  addFields: PropTypes.arrayOf(PropTypes.string),
   removeFields: PropTypes.arrayOf(PropTypes.string),
   hideFields: PropTypes.arrayOf(PropTypes.string), // OpenCRUD backwards compatibility
   showRemove: PropTypes.bool,
