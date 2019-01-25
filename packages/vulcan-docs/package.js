@@ -1,5 +1,5 @@
 Package.describe({
-  name: 'vulcan-docs',
+  name: 'vulcan:docs',
   summary: 'Vulcan docs package',
   version: '1.12.11',
   git: 'https://github.com/VulcanJS/Vulcan.git',
