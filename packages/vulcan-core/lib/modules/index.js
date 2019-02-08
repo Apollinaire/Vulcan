@@ -25,6 +25,7 @@ export { default as HelloWorld } from './components/HelloWorld.jsx';
 export { default as Welcome } from './components/Welcome.jsx';
 export { default as RouterHook } from './components/RouterHook.jsx';
 export { default as Dummy } from './components/Dummy.jsx';
+export { default as V } from './components/V.jsx';
 
 export { default as withAccess } from './containers/withAccess.js';
 export { default as withMessages } from './containers/withMessages.js';
